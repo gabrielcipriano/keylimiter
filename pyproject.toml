@@ -6,7 +6,7 @@ authors = ["Gabriel F Cipriano <gabrielfcipriano@gmail.com.br>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.8"
 
 
 [tool.poetry.group.test.dependencies]
