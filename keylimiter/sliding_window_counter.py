@@ -1,7 +1,7 @@
 from . import KeyLimiter
 from .keyvalue_store import InMemoryTtlStore, NamespacedKVStore
 
-from time import time
+from time import monotonic
 from math import floor, ceil
 
 from typing import Literal, TypedDict, Callable
@@ -23,10 +23,11 @@ class SlidingWindowCounterLimiter(KeyLimiter):
     """_window_interval is the number of seconds in a time window"""
     
     
-    def __init__(self, max_requests: int, window_unit: WindowUnit, time_func=time):
+    def __init__(self, max_requests: int, window_unit: WindowUnit, time_func=monotonic):
         """
         :param int max_requests: maximum number of requests in a window
         :param str window_unit: "second" | "minute" | "hour". Default: "minute"
+        :param Callable[[], float] time_func: function that returns the current time in seconds. Default: monotonic
         """
         match(window_unit):
             case "second":

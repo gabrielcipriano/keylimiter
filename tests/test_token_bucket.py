@@ -34,15 +34,15 @@ def test_keys_has_different_buckets():
     assert limiter.allow(OTHER_IP) == False
 
 
-def test_allow_after_refill():
-    limiter = TokenBucketLimiter(5, 4)
+def test_allow_after_refill(time):
+    limiter = TokenBucketLimiter(5, 4, time_func=time)
     
     while limiter.allow(OTHER_IP) == True:
         pass
     
     assert limiter.allow(OTHER_IP) == False
         
-    sleep(0.3)
+    time.tick(0.3)
 
     assert limiter.allow(OTHER_IP) == True
 
@@ -68,8 +68,8 @@ def test_token_bucket_remaining():
     assert limiter.remaining(SOME_IP) == 0
     
 
-def test_token_bucket_retry_after():
-    limiter = TokenBucketLimiter(5, 4)
+def test_token_bucket_retry_after(time):
+    limiter = TokenBucketLimiter(5, 4, time_func=time)
     
     assert limiter.retry_after(SOME_IP) == 0
     
@@ -78,7 +78,7 @@ def test_token_bucket_retry_after():
     
     assert limiter.retry_after(SOME_IP) == 1
     
-    sleep(0.3)
+    time.tick(0.3)
     
     assert limiter.retry_after(SOME_IP) == 0
     

@@ -1,22 +1,8 @@
 from keylimiter import SlidingWindowCounterLimiter
-import pytest
 
 SOME_IP = "127.0.0.1"
 OTHER_IP = "192.168.1.1"
 
-class FakeTime:
-    def __init__(self):
-        self.time = 0
-        
-    def __call__(self):
-        return self.time
-    
-    def tick(self, seconds):
-        self.time += seconds
-        
-@pytest.fixture
-def time():
-    return FakeTime()
 
 def test_allow_until_not_empty():
     limiter = SlidingWindowCounterLimiter(max_requests=3, window_unit="second")
@@ -89,7 +75,7 @@ def test_sliding_window_remaining(time):
     
     
 
-def test_sliding_window_retry_after(time):
+def test_sliding_window_retry_after():
     limiter = SlidingWindowCounterLimiter(5, 'second')
 
     assert limiter.retry_after(SOME_IP) == 0

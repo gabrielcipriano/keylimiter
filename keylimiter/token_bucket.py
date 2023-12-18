@@ -1,21 +1,29 @@
 from . import KeyLimiter
 from .keyvalue_store import InMemoryTtlStore, NamespacedKVStore
 
-from time import time
+from time import monotonic
 from math import ceil, floor
+
+from typing import Callable
 
 class TokenBucketLimiter(KeyLimiter):
     bucket_size: int
     refill_rate: float
     buckets: NamespacedKVStore[tuple[int,int]] # key -> (tokens, last_seen)
+    _time:  Callable[[], float] 
     
-    def __init__(self, bucket_size: int, refill_rate: float):
+    
+    def __init__(self, bucket_size: int, refill_rate: float, time_func=monotonic):
         """
         :param int bucket_size: maximum number of tokens in the bucket
         :param float refill_rate: token refill rate in seconds
+        :param Callable[[], float] time_func: function that returns the current time in seconds. Default: monotonic
         """
         assert bucket_size > 0
         assert refill_rate >= 0
+        assert time_func is not None
+        
+        self._time = time_func
         
         self.bucket_size = bucket_size
         self.refill_rate = refill_rate
@@ -55,7 +63,7 @@ class TokenBucketLimiter(KeyLimiter):
         
         tokens, last_seen = self.buckets.get(key)
         
-        new_tokens = floor(int((time() - last_seen) * self.refill_rate))
+        new_tokens = floor(int((self._time() - last_seen) * self.refill_rate))
         
         if new_tokens <= 0:
             return
@@ -68,5 +76,5 @@ class TokenBucketLimiter(KeyLimiter):
         self._set_tokens(key, self.bucket_size)
         
     def _set_tokens(self, key: str, tokens: int) -> None:
-        self.buckets.set(key, (tokens, int(time()),))
+        self.buckets.set(key, (tokens, int(self._time()),))
     
