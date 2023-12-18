@@ -43,7 +43,7 @@ class SlidingWindowCounterLimiter(KeyLimiter):
         self._max_requests = max_requests
         self._time = time_func
         
-        ttl_kvstore = InMemoryTtlStore(self._window_interval*2)
+        ttl_kvstore = InMemoryTtlStore(self._window_interval*2, time_func)
         
         self._window = NamespacedKVStore[Window]("currw", ttl_kvstore)
         self._prev_window = NamespacedKVStore[Window]("prevw", ttl_kvstore)

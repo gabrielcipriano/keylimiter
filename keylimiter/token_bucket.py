@@ -30,7 +30,7 @@ class TokenBucketLimiter(KeyLimiter):
         
         max_refill_time = ceil(bucket_size / refill_rate) 
         
-        ttl_kvstore = InMemoryTtlStore(max_refill_time)
+        ttl_kvstore = InMemoryTtlStore(max_refill_time, time_func)
 
         self.buckets = NamespacedKVStore[tuple[int,int]]("bucket", ttl_kvstore)
     
@@ -63,7 +63,7 @@ class TokenBucketLimiter(KeyLimiter):
         
         tokens, last_seen = self.buckets.get(key)
         
-        new_tokens = floor(int((self._time() - last_seen) * self.refill_rate))
+        new_tokens = floor((self._time() - last_seen) * self.refill_rate)
         
         if new_tokens <= 0:
             return
