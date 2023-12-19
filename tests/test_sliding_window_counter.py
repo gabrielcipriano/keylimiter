@@ -98,4 +98,12 @@ def test_token_bucket_retry_after_minute(time):
     
     assert limiter.retry_after(SOME_IP) == 15
 
+
+def test_many_realtime():
+    limiter = SlidingWindowCounterLimiter(1000, "second")
     
+    for _ in range(1000):
+        assert limiter.allow(SOME_IP)
+        
+    for _ in range(1000):
+        assert limiter.allow(SOME_IP) == False

@@ -76,5 +76,5 @@ class TokenBucketLimiter(KeyLimiter):
         self._set_tokens(key, self.bucket_size)
         
     def _set_tokens(self, key: str, tokens: int) -> None:
-        self.buckets.set(key, (tokens, int(self._time()),))
+        self.buckets.set(key, (tokens, self._time(),))
     

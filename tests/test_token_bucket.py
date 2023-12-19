@@ -91,4 +91,13 @@ def test_token_bucket_retry_after_fraction_refill():
     
     assert limiter.retry_after(SOME_IP) == 3
 
+
+def test_many_realtime():
+# if __name__ == "__main__":
+    limiter = TokenBucketLimiter(1000, 10)
     
+    for _ in range(1000):
+        assert limiter.allow(SOME_IP)
+        
+    for _ in range(1000):
+        assert limiter.allow(SOME_IP) == False
