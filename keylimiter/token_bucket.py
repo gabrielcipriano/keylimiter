@@ -4,6 +4,8 @@ from .keyvalue_store import InMemoryTtlStore, NamespacedKVStore
 from time import monotonic
 from math import ceil, floor
 
+from threading import Lock
+
 from typing import Callable
 
 class TokenBucketLimiter(KeyLimiter):
@@ -30,12 +32,18 @@ class TokenBucketLimiter(KeyLimiter):
         
         max_refill_time = ceil(bucket_size / refill_rate) 
         
+        self._lock = Lock()
+        
         ttl_kvstore = InMemoryTtlStore(max_refill_time, time_func)
 
         self.buckets = NamespacedKVStore[tuple[int,int]]("bucket", ttl_kvstore)
     
     def allow(self, key: str) -> bool:
-        tokens = self.remaining(key)
+        with self._lock:
+            return self._allow(key)
+            
+    def _allow(self, key: str) -> bool:
+        tokens = self._remaining(key)
         if tokens > 0:
             self._set_tokens(key, tokens - 1)
             return True
@@ -45,15 +53,23 @@ class TokenBucketLimiter(KeyLimiter):
         return self.bucket_size
     
     def remaining(self, key: str) -> int:
+        with self._lock:
+            return self._remaining(key)
+        
+    def _remaining(self, key: str) -> int:
         self._refill(key)
         tokens, _ = self.buckets.get(key)
         return tokens
     
     def retry_after(self, key: str) -> int:
-        tokens = self.remaining(key)
-        if tokens > 0:
-            return 0
-        return ceil(1 / self.refill_rate)
+        with self._lock:
+            return self._retry_after(key)
+            
+    def _retry_after(self, key: str) -> int:
+            tokens = self._remaining(key)
+            if tokens > 0:
+                return 0
+            return ceil(1 / self.refill_rate)
     
     def _refill(self, key: str) -> None:
         bucket = self.buckets.get(key)

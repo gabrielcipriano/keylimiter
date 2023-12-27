@@ -3,6 +3,7 @@ from .keyvalue_store import InMemoryTtlStore, NamespacedKVStore
 
 from time import monotonic
 from math import floor, ceil
+from threading import Lock
 
 from typing import Literal, TypedDict, Callable
 
@@ -15,6 +16,7 @@ class SlidingWindowCounterLimiter(KeyLimiter):
     _window: NamespacedKVStore[Window] # key -> (count, window_id)
     _prev_window: NamespacedKVStore[Window] # key -> (count, window_id)
     _time:  Callable[[], float] 
+    _lock: Lock
     
     _window_unit: WindowUnit
     """_window_unit is the unit of the time window: "second" | "minute" | "hour" """
@@ -42,6 +44,7 @@ class SlidingWindowCounterLimiter(KeyLimiter):
         self._window_unit = window_unit
         self._max_requests = max_requests
         self._time = time_func
+        self._lock = Lock()
         
         ttl_kvstore = InMemoryTtlStore(self._window_interval*2, time_func)
         
@@ -50,6 +53,10 @@ class SlidingWindowCounterLimiter(KeyLimiter):
     
     
     def allow(self, key: str) -> bool:
+        with self._lock:
+            return self._allow(key)
+    
+    def _allow(self, key: str) -> bool:
         self._tick(key)
         if (self._count_rolling_window(key) < self._max_requests):
             window = self._window.get(key)
@@ -63,12 +70,20 @@ class SlidingWindowCounterLimiter(KeyLimiter):
     
     
     def remaining(self, key: str) -> int:
+        with self._lock:
+            return self._remaining(key)
+        
+    def _remaining(self, key: str) -> int:
         self._tick(key)
         return self._max_requests - self._count_rolling_window(key)
     
     
     def retry_after(self, key: str) -> int:
-        if (self.remaining(key) > 0):
+        with self._lock:
+            return self._retry_after(key)
+        
+    def _retry_after(self, key: str) -> int:
+        if (self._remaining(key) > 0):
             return 0
         
         curr_time = self._time()

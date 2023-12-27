@@ -1,7 +1,5 @@
 from keylimiter import TokenBucketLimiter
 
-from time import sleep
-
 
 SOME_IP = "127.0.0.1"
 OTHER_IP = "192.168.1.1"
