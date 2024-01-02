@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "keylimiter"
-version = "0.1.4"
-description = "popular rate limiter algorithms wrote in python"
+version = "0.1.5"
+description = "Thread-safe rate limiter algorithms"
 authors = ["Gabriel F Cipriano <gabrielfcipriano@gmail.com.br>"]
 readme = "README.md"
 
